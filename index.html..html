@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Basta — Offline AI Tutor</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-dark: #04342C;
+    --green-mid: #0F6E56;
+    --green-bright: #1D9E75;
+    --green-light: #9FE1CB;
+    --green-pale: #E1F5EE;
+    --amber: #EF9F27;
+    --blue: #378ADD;
+    --coral: #D85A30;
+    --bg: #F7F9F8;
+    --surface: #FFFFFF;
+    --text: #1A1A1A;
+    --text-muted: #6B7280;
+    --text-hint: #9CA3AF;
+    --border: #E5EAE8;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+  }
+
+  /* ---- SCREENS ---- */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ---- SPLASH ---- */
+  #splash {
+    background: linear-gradient(160deg, var(--green-dark) 0%, #0A5442 50%, var(--green-mid) 100%);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 24px;
+  }
+
+  .splash-logo {
+    width: 80px; height: 80px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin: 0 auto 24px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+  }
+
+  .splash-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 38px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+  }
+
+  .splash-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 48px;
+    font-weight: 300;
+  }
+
+  .pin-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .pin-dots {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+
+  .pin-dot {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+    background: transparent;
+    transition: all 0.2s;
+  }
+  .pin-dot.filled { background: var(--green-light); border-color: var(--green-light); }
+
+  .pin-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 72px);
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .pin-btn {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 22px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pin-btn:hover { background: rgba(255,255,255,0.16); transform: scale(1.05); }
+  .pin-btn:active { transform: scale(0.96); }
+  .pin-btn.del { font-size: 18px; }
+
+  .pin-hint {
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+    margin-top: 8px;
+  }
+
+  .offline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(29,158,117,0.25);
+    border: 1px solid rgba(159,225,203,0.3);
+    color: var(--green-light);
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 32px;
+    font-weight: 500;
+  }
+
+  .offline-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green-light);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ---- HOME ---- */
+  #home { background: var(--bg); }
+
+  .home-header {
+    background: var(--green-dark);
+    padding: 24px 20px 32px;
+    color: #fff;
+  }
+
+  .home-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .home-brand {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--green-bright);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .home-greeting {
+    font-size: 22px;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .home-sub-text {
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 20px;
+  }
+
+  .progress-card {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .progress-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: var(--green-bright);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .progress-info { flex: 1; }
+  .progress-label { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+  .progress-text { font-size: 14px; color: #fff; font-weight: 500; }
+  .progress-bar-wrap { height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin-top: 6px; }
+  .progress-bar { height: 4px; background: var(--green-light); border-radius: 2px; transition: width 0.5s ease; }
+
+  .home-body { padding: 20px; flex: 1; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .chapter-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .chapter-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .chapter-card:hover { border-color: var(--green-bright); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(29,158,117,0.1); }
+
+  .chapter-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .chapter-info { flex: 1; }
+  .chapter-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .chapter-meta { font-size: 12px; color: var(--text-muted); }
+
+  .chapter-status {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    color: var(--text-hint);
+    flex-shrink: 0;
+  }
+  .chapter-status.done { background: var(--green-pale); border-color: var(--green-light); color: var(--green-mid); }
+
+  /* ---- TUTOR ---- */
+  #tutor { background: var(--bg); }
+
+  .tutor-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .back-btn {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+  .back-btn:hover { background: var(--bg); }
+
+  .tutor-header-info { flex: 1; }
+  .tutor-chapter { font-size: 13px; font-weight: 500; color: var(--text); }
+  .tutor-subject { font-size: 11px; color: var(--text-muted); }
+
+  .offline-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--green-pale);
+    color: var(--green-mid);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    animation: msgIn 0.3s ease;
+  }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .msg.user { flex-direction: row-reverse; }
+
+  .msg-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .msg.bot .msg-avatar { background: var(--green-dark); }
+  .msg.user .msg-avatar { background: var(--green-bright); color: #fff; font-size: 11px; font-weight: 700; }
+
+  .msg-bubble {
+    max-width: 80%;
+    padding: 12px 15px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .msg.bot .msg-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    color: var(--text);
+  }
+  .msg.user .msg-bubble {
+    background: var(--green-dark);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg-bubble strong { font-weight: 600; }
+  .msg-bubble .formula {
+    background: var(--green-pale);
+    border-left: 3px solid var(--green-bright);
+    border-radius: 0 8px 8px 0;
+    padding: 8px 12px;
+    margin: 8px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--green-dark);
+  }
+  .msg-bubble .step {
+    display: flex;
+    gap: 8px;
+    margin: 4px 0;
+    font-size: 13px;
+  }
+  .step-num-badge {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--green-bright);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .quick-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 20px 12px;
+  }
+  .quick-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .quick-btn:hover { background: var(--green-pale); border-color: var(--green-light); color: var(--green-dark); }
+
+  .input-area {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .input-box {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    resize: none;
+    max-height: 100px;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.4;
+    transition: border-color 0.2s;
+  }
+  .input-box:focus { border-color: var(--green-bright); }
+  .input-box::placeholder { color: var(--text-hint); }
+
+  .send-btn {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--green-dark);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    font-size: 18px;
+  }
+  .send-btn:hover { background: var(--green-mid); transform: scale(1.05); }
+  .send-btn:active { transform: scale(0.96); }
+
+  .typing-indicator {
+    display: none;
+    gap: 4px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    border-bottom-left-radius: 4px;
+    width: fit-content;
+  }
+  .typing-indicator.show { display: flex; }
+  .typing-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text-hint);
+    animation: typingBounce 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)} }
+
+  /* ---- SCROLLBAR ---- */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ---- CALCULATOR ---- */
+  .calc-icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+  }
+  #home .calc-icon-btn { background: rgba(255,255,255,0.1); color: #fff; }
+  #home .calc-icon-btn:hover { background: rgba(255,255,255,0.18); }
+  #tutor .calc-icon-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+  #tutor .calc-icon-btn:hover { background: var(--bg); }
+
+  .calc-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(4,52,44,0.45);
+    z-index: 100;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .calc-overlay.show { display: flex; }
+  @media (min-width: 480px) {
+    .calc-overlay { align-items: center; }
+  }
+
+  .calc-modal {
+    background: var(--surface);
+    width: 100%;
+    max-width: 360px;
+    border-radius: 20px 20px 0 0;
+    padding: 18px;
+    animation: msgIn 0.2s ease;
+  }
+  @media (min-width: 480px) {
+    .calc-modal { border-radius: 20px; }
+  }
+
+  .calc-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .calc-modal-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--green-dark);
+  }
+  .calc-close-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .calc-close-btn:hover { background: var(--border); }
+
+  .calc-display {
+    background: var(--green-dark);
+    border-radius: 14px;
+    padding: 18px 16px;
+    margin-bottom: 8px;
+    min-height: 74px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 4px;
+    overflow-x: auto;
+  }
+  .calc-expr {
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .calc-result {
+    color: var(--green-light);
+    font-size: 13px;
+    text-align: right;
+    min-height: 16px;
+    word-break: break-word;
+  }
+  .calc-result.calc-error { color: #F4A2A2; }
+
+  .calc-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  .calc-hint strong { color: var(--green-mid); }
+
+  .calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .calc-key {
+    border: none;
+    border-radius: 12px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 17px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    padding: 14px 0;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .calc-key:active { transform: scale(0.94); }
+  .calc-key.calc-op { background: var(--green-pale); color: var(--green-dark); font-weight: 600; }
+  .calc-key.calc-func { background: #FBEAEA; color: var(--coral); font-weight: 600; }
+  .calc-key.calc-var { background: #EEEDFE; color: #7F77DD; font-weight: 700; font-style: italic; }
+  .calc-key.calc-eq {
+    background: var(--green-dark);
+    color: #fff;
+    font-weight: 700;
+    grid-column: span 2;
+  }
+  .calc-key.calc-eq:hover { background: var(--green-mid); }
+
+  .calc-solve-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 14px 0;
+    border: none;
+    border-radius: 12px;
+    background: var(--green-dark);
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .calc-solve-btn:hover { background: var(--green-mid); }
+  .calc-solve-btn:active { transform: scale(0.98); }
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1: SPLASH / PIN LOGIN -->
+<div class="screen active" id="splash">
+  <div style="margin-bottom: 16px;">
+    <div class="offline-badge">
+      <div class="offline-dot"></div>
+      100% Offline — No Internet Needed
+    </div>
+  </div>
+  <div class="splash-logo">🎒</div>
+  <div class="splash-title">My Basta</div>
+  <div class="splash-sub">Your school. Your card. Anywhere.</div>
+
+  <div class="pin-label">Enter your PIN</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
+    <div class="pin-dot" id="d4"></div>
+  </div>
+
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinPress('1')">1</button>
+    <button class="pin-btn" onclick="pinPress('2')">2</button>
+    <button class="pin-btn" onclick="pinPress('3')">3</button>
+    <button class="pin-btn" onclick="pinPress('4')">4</button>
+    <button class="pin-btn" onclick="pinPress('5')">5</button>
+    <button class="pin-btn" onclick="pinPress('6')">6</button>
+    <button class="pin-btn" onclick="pinPress('7')">7</button>
+    <button class="pin-btn" onclick="pinPress('8')">8</button>
+    <button class="pin-btn" onclick="pinPress('9')">9</button>
+    <button class="pin-btn del" onclick="pinPress('del')">⌫</button>
+    <button class="pin-btn" onclick="pinPress('0')">0</button>
+    <button class="pin-btn" onclick="pinPress('ok')" style="background:rgba(29,158,117,0.4);border-color:rgba(29,158,117,0.5);">✓</button>
+  </div>
+  <div class="pin-hint">Demo PIN: 1234</div>
+</div>
+
+<!-- SCREEN 2: HOME -->
+<div class="screen" id="home">
+  <div class="home-header">
+    <div class="home-top">
+      <div class="home-brand">🎒 My Basta</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="calc-icon-btn" onclick="openCalculator()" title="Calculator">🧮</button>
+        <div class="avatar" id="avatarInitials" onclick="logout()">S</div>
+      </div>
+    </div>
+    <div class="home-greeting" id="greeting">Welcome back!</div>
+    <div class="home-sub-text">Class 10 · Mathematics · NCERT</div>
+    <div class="progress-card">
+      <div class="progress-icon">📊</div>
+      <div class="progress-info">
+        <div class="progress-label">Your Progress</div>
+        <div class="progress-text" id="progressText">0 of 15 chapters explored</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="progressBar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-body">
+    <div class="section-label">Class 10 NCERT Mathematics</div>
+    <div class="chapter-grid" id="chapterGrid"></div>
+  </div>
+</div>
+
+<!-- SCREEN 3: TUTOR CHAT -->
+<div class="screen" id="tutor">
+  <div class="tutor-header">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div class="tutor-header-info">
+      <div class="tutor-chapter" id="tutorTitle">Chapter 1</div>
+      <div class="tutor-subject">Class 10 Mathematics · NCERT</div>
+    </div>
+    <div class="offline-pill">
+      <div class="offline-dot" style="width:5px;height:5px;background:var(--green-bright);animation:pulse 2s infinite;border-radius:50%;"></div>
+      Offline
+    </div>
+    <button class="calc-icon-btn" onclick="openCalculator()" title="Calculator">🧮</button>
+  </div>
+
+  <div class="chat-area" id="chatArea"></div>
+
+  <div class="quick-btns" id="quickBtns"></div>
+
+  <div class="input-area">
+    <textarea class="input-box" id="inputBox" placeholder="Ask anything about this chapter..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+    <button class="send-btn" onclick="sendMsg()">➤</button>
+  </div>
+</div>
+
+<!-- CALCULATOR MODAL -->
+<div class="calc-overlay" id="calcOverlay" onclick="if(event.target===this) closeCalculator()">
+  <div class="calc-modal">
+    <div class="calc-modal-header">
+      <div class="calc-modal-title">🧮 Calculator</div>
+      <button class="calc-close-btn" onclick="closeCalculator()">✕</button>
+    </div>
+    <div class="calc-display">
+      <div class="calc-expr" id="calcExprDisplay">0</div>
+      <div class="calc-result" id="calcResultDisplay"></div>
+    </div>
+    <div class="calc-hint">Solves equations too — try <strong>2x+5=15</strong> or <strong>x^2-5x+6=0</strong></div>
+    <div class="calc-grid" id="calcGrid"></div>
+    <button class="calc-solve-btn" onclick="calcEquals()">Solve ▶</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA — NCERT CLASS 10 MATHS CHAPTERS
+// ============================================================
+const CHAPTERS = [
+  { id:1, name:"Real Numbers", icon:"🔢", color:"#E1F5EE", iconBg:"#1D9E75", topics:"Euclid's Division Lemma · HCF & LCM · Irrational Numbers" },
+  { id:2, name:"Polynomials", icon:"📐", color:"#E6F1FB", iconBg:"#378ADD", topics:"Zeros · Division Algorithm · Quadratic Polynomials" },
+  { id:3, name:"Linear Equations in Two Variables", icon:"📏", color:"#FAEEDA", iconBg:"#EF9F27", topics:"Graphical Method · Substitution · Elimination" },
+  { id:4, name:"Quadratic Equations", icon:"⚡", color:"#FAECE7", iconBg:"#D85A30", topics:"Factorisation · Completing Square · Quadratic Formula" },
+  { id:5, name:"Arithmetic Progressions", icon:"🔗", color:"#EEEDFE", iconBg:"#7F77DD", topics:"nth Term · Sum of AP · Applications" },
+  { id:6, name:"Triangles", icon:"🔺", color:"#EAF3DE", iconBg:"#639922", topics:"Similarity · BPT · Pythagoras Theorem" },
+  { id:7, name:"Coordinate Geometry", icon:"📍", color:"#E1F5EE", iconBg:"#1D9E75", topics:"Distance Formula · Section Formula · Area of Triangle" },
+  { id:8, name:"Introduction to Trigonometry", icon:"📡", color:"#E6F1FB", iconBg:"#378ADD", topics:"Ratios · Identities · Complementary Angles" },
+  { id:9, name:"Applications of Trigonometry", icon:"🏔️", color:"#FAEEDA", iconBg:"#EF9F27", topics:"Heights & Distances · Angle of Elevation" },
+  { id:10, name:"Circles", icon:"⭕", color:"#FAECE7", iconBg:"#D85A30", topics:"Tangent · Chord · Number of Tangents" },
+  { id:11, name:"Areas Related to Circles", icon:"🥧", color:"#EEEDFE", iconBg:"#7F77DD", topics:"Sector · Segment · Combinations" },
+  { id:12, name:"Surface Areas and Volumes", icon:"📦", color:"#EAF3DE", iconBg:"#639922", topics:"Combinations of Solids · Conversion · Frustum" },
+  { id:13, name:"Statistics", icon:"📊", color:"#E1F5EE", iconBg:"#1D9E75", topics:"Mean · Median · Mode · Ogive" },
+  { id:14, name:"Probability", icon:"🎲", color:"#E6F1FB", iconBg:"#378ADD", topics:"Classical Probability · Events · Applications" },
+  { id:15, name:"Constructions", icon:"📐", color:"#FAEEDA", iconBg:"#EF9F27", topics:"Division of Line Segment · Tangents to Circle" },
+];
+
+// ============================================================
+// KNOWLEDGE BASE — NCERT CLASS 10 MATHS Q&A
+// ============================================================
+const KB = [
+  // REAL NUMBERS
+  { ch:1, q:["euclid division lemma","euclid lemma","division lemma"], a:`<strong>Euclid's Division Lemma</strong> states that for any two positive integers <em>a</em> and <em>b</em>, there exist unique integers <em>q</em> and <em>r</em> such that:<div class="formula">a = bq + r, where 0 ≤ r < b</div>Here <em>a</em> is the dividend, <em>b</em> is the divisor, <em>q</em> is the quotient, and <em>r</em> is the remainder.<br><br><strong>Example:</strong> If a = 17, b = 5 then 17 = 5×3 + 2, so q=3, r=2 ✓` },
+  { ch:1, q:["hcf using euclid","highest common factor euclid","euclid algorithm hcf"], a:`<strong>Finding HCF using Euclid's Algorithm:</strong><div class="step"><div class="step-num-badge">1</div><div>Apply Euclid's lemma: a = bq + r</div></div><div class="step"><div class="step-num-badge">2</div><div>Replace a with b, and b with r</div></div><div class="step"><div class="step-num-badge">3</div><div>Repeat until remainder = 0</div></div><div class="step"><div class="step-num-badge">4</div><div>Last non-zero remainder = HCF</div></div><strong>Example:</strong> HCF(135, 225)<div class="formula">225 = 135×1 + 90<br>135 = 90×1 + 45<br>90 = 45×2 + 0<br>∴ HCF = 45</div>` },
+  { ch:1, q:["fundamental theorem arithmetic","prime factorization theorem","unique factorization"], a:`<strong>Fundamental Theorem of Arithmetic:</strong><br>Every composite number can be expressed (factorised) as a product of primes, and this factorisation is <em>unique</em> (apart from order).<div class="formula">Example: 360 = 2³ × 3² × 5</div>This is used to find HCF and LCM:<br>• <strong>HCF</strong> = Product of smallest powers of common prime factors<br>• <strong>LCM</strong> = Product of greatest powers of all prime factors<div class="formula">HCF × LCM = Product of two numbers</div>` },
+  { ch:1, q:["irrational number","prove irrational","root 2 irrational","√2 irrational"], a:`<strong>Proving √2 is Irrational:</strong><div class="step"><div class="step-num-badge">1</div><div>Assume √2 = p/q where p, q are coprime integers, q ≠ 0</div></div><div class="step"><div class="step-num-badge">2</div><div>Squaring: 2 = p²/q² → p² = 2q²</div></div><div class="step"><div class="step-num-badge">3</div><div>So 2 divides p², which means 2 divides p</div></div><div class="step"><div class="step-num-badge">4</div><div>Let p = 2m, then 4m² = 2q² → q² = 2m²</div></div><div class="step"><div class="step-num-badge">5</div><div>So 2 divides q also — contradiction! p & q are not coprime</div></div><strong>∴ √2 is irrational ✓</strong>` },
+  { ch:1, q:["terminating decimal","non terminating","decimal expansion"], a:`A rational number p/q has a <strong>terminating decimal</strong> if q has only factors of 2 and 5.<div class="formula">Condition: q = 2ⁿ × 5ᵐ (after simplification)</div><strong>Examples:</strong><br>• 7/8 = 7/2³ → terminating → 0.875<br>• 1/6 = 1/(2×3) → non-terminating repeating → 0.1666...<br>• 3/25 = 3/5² → terminating → 0.12` },
+
+  // POLYNOMIALS
+  { ch:2, q:["zeros of polynomial","zeroes of polynomial","what are zeros"], a:`<strong>Zeros of a Polynomial</strong> are values of x where p(x) = 0.<br><br>For a <strong>quadratic polynomial</strong> ax² + bx + c with zeros α and β:<div class="formula">Sum of zeros: α + β = -b/a<br>Product of zeros: αβ = c/a</div><strong>Example:</strong> For x² - 5x + 6:<br>α + β = 5, αβ = 6<br>So zeros are 2 and 3 ✓` },
+  { ch:2, q:["division algorithm polynomial","divide polynomial"], a:`<strong>Division Algorithm for Polynomials:</strong><div class="formula">Dividend = Divisor × Quotient + Remainder</div>or: <strong>p(x) = g(x) × q(x) + r(x)</strong><br><br>where degree of r(x) < degree of g(x) OR r(x) = 0.<br><br>This is used to find remaining zeros when some zeros are already known.` },
+  { ch:2, q:["quadratic polynomial zeros","form quadratic","quadratic from zeros"], a:`<strong>Forming a Quadratic Polynomial from its Zeros:</strong><br>If α and β are zeros:<div class="formula">p(x) = x² - (α+β)x + αβ</div><strong>Example:</strong> Zeros are 3 and -2<br>Sum = 3+(-2) = 1, Product = 3×(-2) = -6<div class="formula">p(x) = x² - x - 6</div>` },
+
+  // LINEAR EQUATIONS
+  { ch:3, q:["substitution method","solve by substitution"], a:`<strong>Substitution Method — Steps:</strong><div class="step"><div class="step-num-badge">1</div><div>Express one variable in terms of other from one equation</div></div><div class="step"><div class="step-num-badge">2</div><div>Substitute this value into the second equation</div></div><div class="step"><div class="step-num-badge">3</div><div>Solve for the remaining variable</div></div><div class="step"><div class="step-num-badge">4</div><div>Back-substitute to find the other variable</div></div><strong>Example:</strong> x + y = 5, 2x - y = 1<div class="formula">From eq1: x = 5 - y<br>Sub in eq2: 2(5-y) - y = 1<br>10 - 3y = 1 → y = 3, x = 2</div>` },
+  { ch:3, q:["elimination method","solve by elimination"], a:`<strong>Elimination Method — Steps:</strong><div class="step"><div class="step-num-badge">1</div><div>Multiply equations to make coefficients of one variable equal</div></div><div class="step"><div class="step-num-badge">2</div><div>Add or subtract equations to eliminate that variable</div></div><div class="step"><div class="step-num-badge">3</div><div>Solve for remaining variable, then back-substitute</div></div><strong>Example:</strong> 2x + 3y = 8, 4x + 6y = 14<div class="formula">Multiply eq1 by 2: 4x + 6y = 16<br>Subtract eq2: 0 = 2 → No solution (parallel lines)</div>` },
+  { ch:3, q:["consistent inconsistent","number of solutions","type of solution"], a:`<strong>Types of Solutions:</strong><br><br>For a₁x + b₁y = c₁ and a₂x + b₂y = c₂:<div class="formula">a₁/a₂ ≠ b₁/b₂ → Unique solution (consistent)<br>a₁/a₂ = b₁/b₂ = c₁/c₂ → Infinite solutions (coincident)<br>a₁/a₂ = b₁/b₂ ≠ c₁/c₂ → No solution (parallel lines)</div>` },
+
+  // QUADRATIC EQUATIONS
+  { ch:4, q:["quadratic formula","discriminant","solve quadratic"], a:`<strong>Quadratic Formula:</strong><br>For ax² + bx + c = 0:<div class="formula">x = (-b ± √(b²-4ac)) / 2a</div><strong>Discriminant D = b² - 4ac:</strong><br>• D > 0 → Two distinct real roots<br>• D = 0 → Two equal real roots<br>• D < 0 → No real roots<br><br><strong>Example:</strong> 2x² - 7x + 3 = 0<div class="formula">D = 49 - 24 = 25<br>x = (7 ± 5)/4<br>x = 3 or x = 1/2</div>` },
+  { ch:4, q:["factorisation method quadratic","solve by factorisation","split middle term"], a:`<strong>Solving by Factorisation (Splitting Middle Term):</strong><div class="step"><div class="step-num-badge">1</div><div>Find two numbers whose sum = b and product = ac</div></div><div class="step"><div class="step-num-badge">2</div><div>Split the middle term using these numbers</div></div><div class="step"><div class="step-num-badge">3</div><div>Group and factorise</div></div><div class="step"><div class="step-num-badge">4</div><div>Set each factor = 0 and solve</div></div><strong>Example:</strong> x² + 5x + 6 = 0<div class="formula">Need: sum=5, product=6 → 2 and 3<br>x² + 2x + 3x + 6 = 0<br>x(x+2) + 3(x+2) = 0<br>(x+2)(x+3) = 0<br>x = -2 or x = -3</div>` },
+  { ch:4, q:["completing the square","complete the square"], a:`<strong>Completing the Square Method:</strong><br>For x² + bx + c = 0:<div class="step"><div class="step-num-badge">1</div><div>Move constant to right side: x² + bx = -c</div></div><div class="step"><div class="step-num-badge">2</div><div>Add (b/2)² to both sides</div></div><div class="step"><div class="step-num-badge">3</div><div>Write left side as perfect square</div></div><div class="step"><div class="step-num-badge">4</div><div>Take square root and solve</div></div><strong>Example:</strong> x² + 4x - 5 = 0<div class="formula">x² + 4x = 5<br>(x+2)² = 5+4 = 9<br>x+2 = ±3<br>x = 1 or x = -5</div>` },
+
+  // AP
+  { ch:5, q:["nth term ap","general term","tn formula"], a:`<strong>nth Term of an Arithmetic Progression:</strong><div class="formula">aₙ = a + (n-1)d</div>where:<br>• a = first term<br>• d = common difference<br>• n = position of term<br><br><strong>Example:</strong> AP: 2, 5, 8, 11...<br>a = 2, d = 3<div class="formula">a₁₀ = 2 + (10-1)×3 = 2 + 27 = 29</div>` },
+  { ch:5, q:["sum of ap","sum of arithmetic progression","sn formula"], a:`<strong>Sum of first n terms of AP:</strong><div class="formula">Sₙ = n/2 × (2a + (n-1)d)<br><br>OR<br><br>Sₙ = n/2 × (a + l)</div>where l = last term<br><br><strong>Example:</strong> Find sum of first 10 terms of 2, 5, 8...<div class="formula">S₁₀ = 10/2 × (2×2 + 9×3)<br>= 5 × (4 + 27) = 5 × 31 = 155</div>` },
+  { ch:5, q:["common difference","what is ap","arithmetic progression"], a:`<strong>Arithmetic Progression (AP)</strong> is a sequence where consecutive terms have a constant difference.<div class="formula">Common Difference d = a₂ - a₁ = a₃ - a₂</div><strong>Examples:</strong><br>• 2, 4, 6, 8... (d = 2)<br>• 10, 7, 4, 1... (d = -3)<br>• 1, 1, 1, 1... (d = 0)<br><br>General form: a, a+d, a+2d, a+3d...` },
+
+  // TRIANGLES
+  { ch:6, q:["bpt basic proportionality","thales theorem"], a:`<strong>Basic Proportionality Theorem (Thales Theorem):</strong><br>If a line is drawn parallel to one side of a triangle, it divides the other two sides in the same ratio.<div class="formula">If DE ∥ BC then: AD/DB = AE/EC</div><strong>Converse:</strong> If a line divides two sides in the same ratio, it is parallel to the third side.` },
+  { ch:6, q:["similarity criteria","similar triangles","aa sas sss"], a:`<strong>Criteria for Similar Triangles:</strong><br><br><strong>AA (Angle-Angle):</strong> Two angles equal<br><strong>SAS:</strong> Two sides proportional, included angle equal<br><strong>SSS:</strong> All three sides proportional<div class="formula">If △ABC ~ △DEF then:<br>AB/DE = BC/EF = AC/DF<br>and ∠A=∠D, ∠B=∠E, ∠C=∠F</div>` },
+  { ch:6, q:["pythagoras theorem","pythagorean theorem"], a:`<strong>Pythagoras Theorem:</strong><br>In a right triangle, the square of the hypotenuse equals the sum of squares of other two sides.<div class="formula">AC² = AB² + BC²<br>(Hypotenuse² = Base² + Perpendicular²)</div><strong>Common Pythagorean Triplets:</strong><br>• (3, 4, 5)<br>• (5, 12, 13)<br>• (8, 15, 17)<br>• (7, 24, 25)<br><br><strong>Converse:</strong> If AC² = AB² + BC², then angle B = 90°` },
+
+  // COORDINATE GEOMETRY
+  { ch:7, q:["distance formula","distance between points"], a:`<strong>Distance Formula:</strong><br>Distance between two points A(x₁,y₁) and B(x₂,y₂):<div class="formula">AB = √[(x₂-x₁)² + (y₂-y₁)²]</div><strong>Example:</strong> Distance between (3,4) and (0,0):<div class="formula">d = √[(3-0)² + (4-0)²]<br>= √[9 + 16] = √25 = 5</div><br><strong>Note:</strong> Distance from origin O(0,0) to P(x,y) = √(x²+y²)` },
+  { ch:7, q:["section formula","midpoint formula","divide line segment"], a:`<strong>Section Formula:</strong><br>Point P dividing AB in ratio m:n:<div class="formula">P = ((mx₂ + nx₁)/(m+n), (my₂ + ny₁)/(m+n))</div><strong>Midpoint Formula</strong> (m=n=1):<div class="formula">M = ((x₁+x₂)/2, (y₁+y₂)/2)</div><strong>Example:</strong> Midpoint of (2,3) and (6,7):<div class="formula">M = ((2+6)/2, (3+7)/2) = (4, 5)</div>` },
+  { ch:7, q:["area of triangle coordinate","area triangle vertices"], a:`<strong>Area of Triangle with given vertices:</strong><br>For A(x₁,y₁), B(x₂,y₂), C(x₃,y₃):<div class="formula">Area = ½|x₁(y₂-y₃) + x₂(y₃-y₁) + x₃(y₁-y₂)|</div><strong>Note:</strong> If Area = 0, the three points are collinear!<br><br><strong>Example:</strong> A(1,1), B(4,1), C(4,5):<div class="formula">= ½|1(1-5) + 4(5-1) + 4(1-1)|<br>= ½|(-4) + 16 + 0| = ½×12 = 6 sq units</div>` },
+
+  // TRIGONOMETRY
+  { ch:8, q:["trigonometric ratios","sin cos tan","trig ratios","what are trigonometric ratios","define trigonometric ratios"], a:`<strong>Trigonometric Ratios for angle θ in a right triangle:</strong><div class="formula">sin θ = Opposite/Hypotenuse = P/H<br>cos θ = Adjacent/Hypotenuse = B/H<br>tan θ = Opposite/Adjacent = P/B</div><strong>Reciprocals:</strong><div class="formula">cosec θ = H/P = 1/sin θ<br>sec θ = H/B = 1/cos θ<br>cot θ = B/P = 1/tan θ</div><strong>Also note:</strong><div class="formula">tan θ = sin θ / cos θ<br>cot θ = cos θ / sin θ</div><strong>Remember:</strong> SOH-CAH-TOA<br><br>📌 These ratios depend only on the angle θ — not on the size of the triangle (similar right triangles give the same ratios).` },
+  { ch:8, q:["trig table","values of sin cos tan","standard angles","trigonometric ratios of specific angles","0 30 45 60 90"], a:`<strong>Trigonometric Ratios of Specific Angles:</strong><div class="formula">Angle:    0°     30°     45°     60°     90°<br>sin:      0     1/2    1/√2    √3/2      1<br>cos:      1    √3/2    1/√2     1/2      0<br>tan:      0    1/√3      1       √3      ∞ (not defined)<br>cosec:    ∞      2       √2     2/√3      1<br>sec:      1    2/√3      √2       2      ∞ (not defined)<br>cot:      ∞     √3        1     1/√3      0</div><strong>Easy trick for sin (then reverse for cos):</strong><div class="formula">sin: √(0/4), √(1/4), √(2/4), √(3/4), √(4/4)<br>= 0, 1/2, 1/√2, √3/2, 1</div>cos values are the same list read backwards. tan = sin/cos for each angle.<br><br>⚠️ tan 90° and sec 90° are <strong>not defined</strong> (division by 0). cosec 0° and cot 0° are <strong>not defined</strong> too.` },
+  { ch:8, q:["trigonometric identities","trig identities","pythagorean identity","fundamental identities"], a:`<strong>Three Fundamental Trigonometric Identities:</strong><div class="formula">sin²θ + cos²θ = 1&nbsp;&nbsp;&nbsp;(always true, 0°≤θ≤90°)<br>1 + tan²θ = sec²θ&nbsp;&nbsp;&nbsp;(true for θ ≠ 90°)<br>1 + cot²θ = cosec²θ&nbsp;&nbsp;&nbsp;(true for θ ≠ 0°)</div><strong>Rearranged forms you'll often need:</strong><br>• sin²θ = 1 − cos²θ &nbsp;&nbsp; cos²θ = 1 − sin²θ<br>• tan²θ = sec²θ − 1 &nbsp;&nbsp; sec²θ − tan²θ = 1<br>• cot²θ = cosec²θ − 1 &nbsp;&nbsp; cosec²θ − cot²θ = 1<br><br>These are used to simplify expressions, prove identities, and find one ratio when another is known.` },
+  { ch:8, q:["complementary angles","sin 90 minus a","complementary angle relations","trigonometric ratios of complementary angles"], a:`<strong>Trigonometric Ratios of Complementary Angles</strong> (two angles are complementary if they add up to 90°):<div class="formula">sin(90° − A) = cos A&nbsp;&nbsp;&nbsp;cos(90° − A) = sin A<br>tan(90° − A) = cot A&nbsp;&nbsp;&nbsp;cot(90° − A) = tan A<br>sec(90° − A) = cosec A&nbsp;&nbsp;&nbsp;cosec(90° − A) = sec A</div><strong>Worked Example:</strong> Evaluate sin 63°/cos 27°<br>Since 63° + 27° = 90°, cos 27° = cos(90° − 63°) = sin 63°<div class="formula">sin 63°/cos 27° = sin 63°/sin 63° = 1</div><strong>Another Example:</strong> Evaluate tan 7° × tan 23° × tan 60° × tan 67° × tan 83°<br>tan 7°×tan 83° = tan 7°×cot 7° = 1 (since 83°=90°−7°)<br>tan 23°×tan 67° = tan 23°×cot 23° = 1 (since 67°=90°−23°)<div class="formula">Result = 1 × 1 × tan 60° = √3</div>` },
+  { ch:8, q:["find other ratios if sin given","given sin find cos and tan","if sina find cosa","find remaining trigonometric ratios","if cos a find other ratios","if tan a find other ratios"], a:`<strong>How to find the other 5 ratios when ONE ratio is given</strong> (two methods):<br><br><strong>Method 1 — Right Triangle:</strong> Draw a right triangle, label the two sides from the given ratio, find the third side using Pythagoras theorem, then read off every ratio.<br><br><strong>Method 2 — Identities:</strong> Use sin²θ+cos²θ=1, 1+tan²θ=sec²θ etc.<br><br><strong>Worked Example:</strong> If sin A = 3/5, find cos A and tan A.<div class="formula">P = 3, H = 5<br>B = √(H² − P²) = √(25 − 9) = √16 = 4<br>cos A = B/H = 4/5<br>tan A = P/B = 3/4</div><strong>Check with identity:</strong> cos A = √(1 − sin²A) = √(1 − 9/25) = √(16/25) = 4/5 ✓<br><br><strong>Worked Example 2:</strong> If tan θ = 7/24, find sin θ and cos θ.<div class="formula">P = 7, B = 24<br>H = √(7² + 24²) = √(49+576) = √625 = 25<br>sin θ = 7/25,&nbsp;&nbsp;cos θ = 24/25</div>` },
+  { ch:8, q:["trig ratios of 0 and 90","sin 0 cos 0","sin 90 cos 90","tan 90 not defined","angle 0 degree 90 degree ratios"], a:`<strong>Trigonometric Ratios of 0° and 90° (limiting cases):</strong><div class="formula">sin 0° = 0&nbsp;&nbsp;&nbsp;cos 0° = 1&nbsp;&nbsp;&nbsp;tan 0° = 0<br>sin 90° = 1&nbsp;&nbsp;&nbsp;cos 90° = 0&nbsp;&nbsp;&nbsp;tan 90° = not defined</div><strong>Not defined values:</strong><br>• At 0°: cosec 0° and cot 0° are not defined (they involve 1/sin 0° = 1/0)<br>• At 90°: sec 90° and tan 90° are not defined (they involve 1/cos 90° = 1/0)<br><br><strong>Why:</strong> As the angle A of a right triangle approaches 0°, the side opposite to A becomes almost 0, so sin A → 0 and cos A → 1. As A approaches 90°, the reverse happens.` },
+  { ch:8, q:["range of trigonometric ratios","values between 0 and 1","sin cos always less than 1","maximum value of sin cos"], a:`<strong>Range of Trigonometric Ratios for 0° ≤ A ≤ 90°:</strong><div class="formula">0 ≤ sin A ≤ 1<br>0 ≤ cos A ≤ 1<br>tan A and cot A can take any value from 0 to ∞<br>sec A ≥ 1 and cosec A ≥ 1 (never between −1 and 1)</div><strong>Key fact:</strong> Since sin A and cos A are always ≤ 1 (they're ratios of a side to the hypotenuse, and the hypotenuse is the longest side), values like "sin A = 1.5" or "cos A = 2" are <strong>impossible</strong> and mean the question has an error.<br><br>As A increases from 0° to 90°: sin A increases (0→1), cos A decreases (1→0), tan A increases (0→∞).` },
+  { ch:8, q:["evaluate trigonometric expression","find value of expression","numerical value trig","calculate 2tan45"], a:`<strong>How to Evaluate a Trigonometric Expression:</strong> substitute the standard values from the table, then simplify.<br><br><strong>Example 1:</strong> Evaluate 2 tan²45° + cos²30° − sin²60°<div class="formula">tan 45° = 1 → 2×1² = 2<br>cos 30° = √3/2 → cos²30° = 3/4<br>sin 60° = √3/2 → sin²60° = 3/4<br>Result = 2 + 3/4 − 3/4 = <strong>2</strong></div><strong>Example 2:</strong> Evaluate sin 60° cos 30° + cos 60° sin 30°<div class="formula">= (√3/2)(√3/2) + (1/2)(1/2)<br>= 3/4 + 1/4 = <strong>1</strong></div><strong>Example 3:</strong> Evaluate (sin30°+tan45°−cosec60°)/(sec30°+cos60°+cot45°)<div class="formula">Numerator = 1/2 + 1 − 2/√3 = 3/2 − 2/√3<br>Denominator = 2/√3 + 1/2 + 1 = 2/√3 + 3/2<br>Simplify by rationalising 2/√3 = 2√3/3 and combining — always convert every value to the table form first, then simplify step by step.</div>` },
+  { ch:8, q:["prove trigonometric identity","how to prove identity","proving identities method","lhs equals rhs trig"], a:`<strong>How to Prove a Trigonometric Identity:</strong> Start with the side that looks more complex (usually LHS), simplify using sin²θ+cos²θ=1, 1+tan²θ=sec²θ, 1+cot²θ=cosec²θ, and reciprocal relations, until it matches the RHS.<br><br><strong>Worked Example:</strong> Prove (cosec θ − cot θ)² = (1 − cos θ)/(1 + cos θ)<div class="formula">LHS = (1/sinθ − cosθ/sinθ)²<br>= [(1−cosθ)/sinθ]²<br>= (1−cosθ)²/sin²θ<br>= (1−cosθ)²/(1−cos²θ)&nbsp;&nbsp;[using sin²θ=1−cos²θ]<br>= (1−cosθ)²/[(1−cosθ)(1+cosθ)]<br>= (1−cosθ)/(1+cosθ) = RHS ✓</div><strong>Another common one:</strong> Prove (sinA+cosecA)²+(cosA+secA)² = 7+tan²A+cot²A<div class="formula">LHS = sin²A+2+cosec²A+cos²A+2+sec²A<br>= (sin²A+cos²A)+4+(cosec²A+sec²A)<br>= 1+4+(1+cot²A)+(1+tan²A)<br>= 7+tan²A+cot²A = RHS ✓</div>` },
+  { ch:8, q:["reciprocal trigonometric ratios","cosec sec cot relation","1 by sin","what is cosec sec cot"], a:`<strong>Reciprocal Relationships:</strong><div class="formula">cosec θ = 1/sin θ&nbsp;&nbsp;&nbsp;⇒&nbsp;&nbsp;&nbsp;sin θ = 1/cosec θ<br>sec θ = 1/cos θ&nbsp;&nbsp;&nbsp;⇒&nbsp;&nbsp;&nbsp;cos θ = 1/sec θ<br>cot θ = 1/tan θ&nbsp;&nbsp;&nbsp;⇒&nbsp;&nbsp;&nbsp;tan θ = 1/cot θ</div><strong>Also:</strong><div class="formula">tan θ = sin θ/cos θ<br>cot θ = cos θ/sin θ</div><strong>Example:</strong> If cos A = 12/13, find sec A.<div class="formula">sec A = 1/cos A = 13/12</div>` },
+  { ch:8, q:["right triangle example find sin a cos a","ab and bc given find trigonometric ratios","triangle right angled at b"], a:`<strong>Worked Example:</strong> In a right triangle ABC, right-angled at B, if AB = 24 cm and BC = 7 cm, find sin A, cos A and tan A.<div class="formula">Find hypotenuse AC:<br>AC = √(AB² + BC²) = √(24² + 7²) = √(576+49) = √625 = 25 cm<br><br>For angle A: opposite side = BC = 7, adjacent side = AB = 24, hypotenuse = AC = 25<br><br>sin A = BC/AC = 7/25<br>cos A = AB/AC = 24/25<br>tan A = BC/AB = 7/24</div><strong>Tip:</strong> Always identify which side is "opposite" the angle you're finding the ratio for — it's the side that does NOT touch that angle.` },
+
+  // APPLICATIONS OF TRIG
+  { ch:9, q:["angle of elevation","height and distance","angle of depression"], a:`<strong>Angle of Elevation and Depression:</strong><br><br><strong>Angle of Elevation:</strong> Angle from horizontal upward to object above.<br><strong>Angle of Depression:</strong> Angle from horizontal downward to object below.<div class="formula">tan(angle) = Height / Horizontal Distance</div><strong>Example:</strong> Tower 30m high, angle of elevation 30°:<div class="formula">tan 30° = 30/d<br>1/√3 = 30/d<br>d = 30√3 ≈ 51.96 m</div>` },
+
+  // CIRCLES
+  { ch:10, q:["tangent to circle","tangent properties","tangent perpendicular"], a:`<strong>Key Properties of Tangents:</strong><br><br><strong>Theorem 1:</strong> The tangent to a circle is perpendicular to the radius at the point of tangency.<div class="formula">OP ⊥ AB (where O = center, P = tangent point)</div><strong>Theorem 2:</strong> Two tangents drawn from an external point are equal in length.<div class="formula">PA = PB (tangents from external point P)</div>Only <strong>one</strong> tangent can be drawn at any point on the circle.` },
+  { ch:10, q:["number of tangents","tangents from external point"], a:`<strong>Number of Tangents from a Point:</strong><br><br>• Point <strong>inside</strong> the circle → <strong>0</strong> tangents<br>• Point <strong>on</strong> the circle → <strong>1</strong> tangent<br>• Point <strong>outside</strong> the circle → <strong>2</strong> tangents<br><br>The two tangents from an external point are always equal in length and subtend equal angles at the center.` },
+
+  // AREAS RELATED TO CIRCLES
+  { ch:11, q:["area of sector","sector area formula"], a:`<strong>Area of a Sector:</strong><div class="formula">Area = (θ/360°) × πr²</div><strong>Length of Arc:</strong><div class="formula">l = (θ/360°) × 2πr</div><strong>Example:</strong> Sector with r = 7cm, θ = 90°:<div class="formula">Area = (90/360) × π × 7²<br>= (1/4) × (22/7) × 49<br>= 38.5 cm²</div>` },
+  { ch:11, q:["area of segment","minor segment","major segment"], a:`<strong>Area of a Segment:</strong><div class="formula">Area of Segment = Area of Sector - Area of Triangle</div><strong>For minor segment with angle θ:</strong><div class="formula">= (θ/360°)×πr² - (1/2)r²sinθ</div><strong>Example:</strong> Chord making 60° at center, r = 6cm:<div class="formula">= (60/360)×π×36 - (1/2)×36×sin60°<br>= 6π - 9√3 ≈ 18.85 - 15.59 ≈ 3.26 cm²</div>` },
+
+  // SURFACE AREAS AND VOLUMES
+  { ch:12, q:["surface area volume formulas","all formulas surface area"], a:`<strong>Important Surface Area & Volume Formulas:</strong><div class="formula">Cube (side a):<br>  SA = 6a²,  V = a³<br><br>Cuboid (l,b,h):<br>  SA = 2(lb+bh+hl),  V = lbh<br><br>Cylinder (r,h):<br>  CSA = 2πrh,  TSA = 2πr(r+h),  V = πr²h<br><br>Cone (r,h,l):<br>  CSA = πrl,  TSA = πr(r+l),  V = (1/3)πr²h<br><br>Sphere (r):<br>  SA = 4πr²,  V = (4/3)πr³</div>` },
+  { ch:12, q:["frustum","frustum of cone","cone cut"], a:`<strong>Frustum of a Cone</strong> (when a cone is cut by a plane parallel to base):<div class="formula">Slant height: l = √[h² + (R-r)²]<br><br>CSA = π(R+r)l<br><br>TSA = π(R+r)l + π(R² + r²)<br><br>Volume = (πh/3)(R² + Rr + r²)</div>where R = larger radius, r = smaller radius, h = height` },
+
+  // STATISTICS
+  { ch:13, q:["mean grouped data","mean frequency","direct method"], a:`<strong>Mean of Grouped Data:</strong><br><br><strong>Direct Method:</strong><div class="formula">Mean (x̄) = Σfᵢxᵢ / Σfᵢ</div><strong>Assumed Mean Method:</strong><div class="formula">Mean = a + (Σfᵢdᵢ / Σfᵢ)<br>where dᵢ = xᵢ - a (a = assumed mean)</div><strong>Step Deviation Method:</strong><div class="formula">Mean = a + (Σfᵢuᵢ / Σfᵢ) × h<br>where uᵢ = (xᵢ - a)/h</div>` },
+  { ch:13, q:["median grouped data","median formula","cumulative frequency"], a:`<strong>Median of Grouped Data:</strong><div class="formula">Median = l + ((n/2 - cf) / f) × h</div>where:<br>• l = lower class boundary of median class<br>• n = total frequency<br>• cf = cumulative frequency before median class<br>• f = frequency of median class<br>• h = class width<br><br>Find median class: class where cumulative frequency first exceeds n/2` },
+  { ch:13, q:["mode grouped data","mode formula"], a:`<strong>Mode of Grouped Data:</strong><div class="formula">Mode = l + ((f₁ - f₀) / (2f₁ - f₀ - f₂)) × h</div>where:<br>• l = lower class boundary of modal class<br>• f₁ = frequency of modal class (highest frequency)<br>• f₀ = frequency of class before modal class<br>• f₂ = frequency of class after modal class<br>• h = class width<br><br>Modal class = class with the highest frequency` },
+
+  // PROBABILITY
+  { ch:14, q:["probability formula","what is probability","classical probability"], a:`<strong>Probability:</strong><div class="formula">P(Event) = Number of Favourable Outcomes / Total Outcomes</div><strong>Key Properties:</strong><br>• 0 ≤ P(E) ≤ 1 always<br>• P(sure event) = 1<br>• P(impossible event) = 0<br>• P(E) + P(Ē) = 1<br><br><strong>Example:</strong> Probability of getting a head on tossing a coin:<div class="formula">P(H) = 1/2</div>` },
+  { ch:14, q:["cards probability","deck of cards","52 cards"], a:`<strong>A standard deck has 52 cards:</strong><br><br>• 4 suits: Hearts♥ Diamonds♦ Clubs♣ Spades♠<br>• Each suit: A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K (13 cards)<br>• Red cards: 26 (Hearts + Diamonds)<br>• Black cards: 26 (Clubs + Spades)<br>• Face cards: 12 (J, Q, K of each suit)<br><div class="formula">P(red card) = 26/52 = 1/2<br>P(face card) = 12/52 = 3/13<br>P(ace) = 4/52 = 1/13</div>` },
+  { ch:14, q:["dice probability","throw dice","rolling dice"], a:`<strong>Throwing a Dice:</strong><br>Total outcomes = 6 (1,2,3,4,5,6)<div class="formula">P(any number) = 1/6<br>P(even) = 3/6 = 1/2<br>P(odd) = 3/6 = 1/2<br>P(number > 4) = 2/6 = 1/3<br>P(prime) = 3/6 = 1/2 (2,3,5)</div><strong>Two dice</strong> → Total outcomes = 36<div class="formula">P(sum=7) = 6/36 = 1/6</div>` },
+
+  // GENERAL
+  { ch:0, q:["what is my basta","about my basta","how does this work"], a:`<strong>Welcome to My Basta! 🎒</strong><br><br>I am your personal AI Maths tutor for <strong>Class 10 NCERT</strong> — and I work completely <strong>offline</strong>. No internet needed, ever.<br><br>I can help you with all 15 chapters:<br>• Real Numbers, Polynomials, Linear Equations<br>• Quadratic Equations, AP, Triangles<br>• Coordinate Geometry, Trigonometry<br>• Circles, Statistics, Probability & more<br><br>Just <strong>ask any question</strong> or select a chapter to get started!` },
+  { ch:0, q:["hello","hi","hey","namaste","helo"], a:`Hello! 👋 I'm My Basta, your Maths tutor for Class 10 NCERT.<br><br>I can explain any concept, solve problems step-by-step, and help you prepare for exams — completely offline!<br><br>Which chapter are you studying today? You can pick one from the home screen or just ask me any question!` },
+  { ch:0, q:["help","what can you do","topics"], a:`I can help you with <strong>all Class 10 NCERT Maths</strong> topics!<br><br>Try asking me:<br>• "What is Euclid's Division Lemma?"<br>• "How to find zeros of a polynomial?"<br>• "Explain the quadratic formula"<br>• "What are trigonometric identities?"<br>• "Explain Pythagoras theorem"<br>• "How to find mean of grouped data?"<br><br>Go ahead — ask anything! 📚` },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let pin = '';
+let currentUser = 'S';
+let currentChapter = null;
+let visited = new Set(JSON.parse(localStorage.getItem('sb_visited')||'[]'));
+let chatHistory = [];
+
+// ============================================================
+// PIN LOGIC
+// ============================================================
+function pinPress(val) {
+  if (val === 'del') { pin = pin.slice(0,-1); }
+  else if (val === 'ok') { checkPin(); return; }
+  else if (pin.length < 4) { pin += val; }
+  updateDots();
+  if (pin.length === 4) setTimeout(checkPin, 200);
+}
+
+function updateDots() {
+  for (let i=1;i<=4;i++) {
+    document.getElementById('d'+i).classList.toggle('filled', i <= pin.length);
+  }
+}
+
+function checkPin() {
+  if (pin.length === 4) {
+    showHome();
+  } else {
+    shakeDots();
+  }
+}
+
+function shakeDots() {
+  const d = document.querySelector('.pin-dots');
+  d.style.animation = 'none';
+  d.style.transform = 'translateX(-8px)';
+  setTimeout(()=>{ d.style.transform='translateX(8px)'; },80);
+  setTimeout(()=>{ d.style.transform=''; pin=''; updateDots(); },160);
+}
+
+// ============================================================
+// SCREENS
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showHome() {
+  showScreen('home');
+  renderChapters();
+  updateProgress();
+  document.getElementById('greeting').textContent = getGreeting();
+}
+
+function goHome() {
+  showScreen('home');
+  updateProgress();
+}
+
+function logout() {
+  pin=''; updateDots(); showScreen('splash');
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if(h<12) return 'Good morning! ☀️';
+  if(h<17) return 'Good afternoon! 📚';
+  return 'Good evening! 🌙';
+}
+
+// ============================================================
+// CHAPTERS
+// ============================================================
+function renderChapters() {
+  const grid = document.getElementById('chapterGrid');
+  grid.innerHTML = CHAPTERS.map(ch => `
+    <div class="chapter-card" onclick="openChapter(${ch.id})">
+      <div class="chapter-icon" style="background:${ch.color};">
+        <span style="font-size:20px;">${ch.icon}</span>
+      </div>
+      <div class="chapter-info">
+        <div class="chapter-name">Ch ${ch.id}: ${ch.name}</div>
+        <div class="chapter-meta">${ch.topics}</div>
+      </div>
+      <div class="chapter-status ${visited.has(ch.id)?'done':''}">
+        ${visited.has(ch.id)?'✓':'→'}
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateProgress() {
+  const count = visited.size;
+  const pct = Math.round((count/CHAPTERS.length)*100);
+  document.getElementById('progressText').textContent = `${count} of ${CHAPTERS.length} chapters explored`;
+  document.getElementById('progressBar').style.width = pct+'%';
+}
+
+function openChapter(id) {
+  currentChapter = CHAPTERS.find(c=>c.id===id);
+  visited.add(id);
+  localStorage.setItem('sb_visited', JSON.stringify([...visited]));
+  chatHistory = [];
+  document.getElementById('tutorTitle').textContent = `Ch ${id}: ${currentChapter.name}`;
+  showScreen('tutor');
+  const chatArea = document.getElementById('chatArea');
+  chatArea.innerHTML = '';
+  addBotMsg(`<strong>Chapter ${id}: ${currentChapter.name}</strong> 📖<br><br>Great choice! I'll help you master this chapter completely.<br><br>You can ask me to explain any concept, show you formulas, or walk through solved examples step by step.<br><br>What would you like to learn first?`);
+  renderQuickBtns(id);
+}
+
+function renderQuickBtns(chId) {
+  const map = {
+    1: ["Euclid's Lemma","HCF using Euclid","Irrational Numbers","Decimal Expansion"],
+    2: ["Zeros of Polynomial","Quadratic Zeros","Division Algorithm"],
+    3: ["Substitution Method","Elimination Method","Types of Solutions"],
+    4: ["Quadratic Formula","Factorisation Method","Completing the Square"],
+    5: ["nth Term of AP","Sum of AP","Common Difference"],
+    6: ["BPT Theorem","Similarity Criteria","Pythagoras Theorem"],
+    7: ["Distance Formula","Section Formula","Area of Triangle"],
+    8: ["Trig Ratios","Standard Values Table","Trig Identities","Complementary Angles","Find Missing Ratio","Prove an Identity"],
+    9: ["Angle of Elevation","Heights & Distances"],
+    10: ["Tangent Properties","Number of Tangents"],
+    11: ["Area of Sector","Area of Segment"],
+    12: ["All SA & V Formulas","Frustum of Cone"],
+    13: ["Mean Formula","Median Formula","Mode Formula"],
+    14: ["Probability Formula","Cards Probability","Dice Probability"],
+    15: ["Division of Line Segment","Tangents to Circle"],
+  };
+  const btns = map[chId] || [];
+  document.getElementById('quickBtns').innerHTML = btns.map(b =>
+    `<button class="quick-btn" onclick="askQuick('${b}')">${b}</button>`
+  ).join('');
+}
+
+function askQuick(q) {
+  document.getElementById('inputBox').value = q;
+  sendMsg();
+}
+
+// ============================================================
+// CHAT & AI LOGIC
+// ============================================================
+function addBotMsg(html) {
+  const chatArea = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.innerHTML = `<div class="msg-avatar">🎒</div><div class="msg-bubble">${html}</div>`;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function addUserMsg(text) {
+  const chatArea = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `<div class="msg-avatar">${currentUser}</div><div class="msg-bubble">${text}</div>`;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function showTyping() {
+  const chatArea = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = 'typing-wrap';
+  div.innerHTML = `<div class="msg-avatar">🎒</div><div class="typing-indicator show"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function hideTyping() {
+  const t = document.getElementById('typing-wrap');
+  if(t) t.remove();
+}
+
+function sendMsg() {
+  const box = document.getElementById('inputBox');
+  const text = box.value.trim();
+  if(!text) return;
+  box.value = '';
+  box.style.height = 'auto';
+  addUserMsg(text);
+  showTyping();
+  setTimeout(()=>{
+    hideTyping();
+    const ans = getAnswer(text);
+    addBotMsg(ans);
+  }, 600 + Math.random()*400);
+}
+
+// ============================================================
+// GENERAL MATH CALCULATOR
+// Handles two things with an actual calculation, not keyword
+// matching: (1) plain arithmetic like "4099+(-239)*32", and
+// (2) single-variable equations in x or y — linear ("2x+3=7")
+// or quadratic ("x^2-5x+6=0") — solved algebraically.
+// ============================================================
+
+// A small safe recursive-descent parser for + - * / ^ ( ) with
+// standard precedence. No eval() involved.
+function evaluateArithmetic(expr) {
+  const cleaned = expr.replace(/\s+/g, '');
+  const tokenRe = /(\d+\.\d+|\d+|[+\-*/^()])/g;
+  const tokens = cleaned.match(tokenRe);
+  if(!tokens || tokens.join('') !== cleaned) throw new Error('invalid expression');
+
+  let pos = 0;
+  const peek = () => tokens[pos];
+  const consume = () => tokens[pos++];
+
+  function parseExpr() {
+    let value = parseTerm();
+    while(peek() === '+' || peek() === '-') {
+      const op = consume(); const rhs = parseTerm();
+      value = op === '+' ? value + rhs : value - rhs;
+    }
+    return value;
+  }
+  function parseTerm() {
+    let value = parseFactor();
+    while(peek() === '*' || peek() === '/') {
+      const op = consume(); const rhs = parseFactor();
+      value = op === '*' ? value * rhs : value / rhs;
+    }
+    return value;
+  }
+  function parseFactor() {
+    if(peek() === '+') { consume(); return parseFactor(); }
+    if(peek() === '-') { consume(); return -parseFactor(); }
+    let base = parseAtom();
+    if(peek() === '^') { consume(); base = Math.pow(base, parseFactor()); }
+    return base;
+  }
+  function parseAtom() {
+    const tok = consume();
+    if(tok === '(') {
+      const v = parseExpr();
+      if(consume() !== ')') throw new Error('mismatched parentheses');
+      return v;
+    }
+    const num = parseFloat(tok);
+    if(tok === undefined || isNaN(num)) throw new Error('invalid token');
+    return num;
+  }
+
+  if(tokens.length === 0) throw new Error('empty expression');
+  const result = parseExpr();
+  if(pos !== tokens.length) throw new Error('unexpected trailing tokens');
+  if(!isFinite(result)) throw new Error('result not finite');
+  return result;
+}
+
+function formatNumber(n) {
+  const rounded = Math.round(n * 1e9) / 1e9; // trim floating-point noise
+  return String(rounded);
+}
+
+// Renders ax² + bx + c as a clean, human-looking equation: no "1x²",
+// no "+ -5x" (becomes "- 5x"), and terms that are exactly 0 are dropped.
+function formatQuadraticStandardForm(a, b, c, varName) {
+  const parts = [];
+  if(Math.abs(a) > 1e-9) {
+    const coef = Math.abs(Math.abs(a) - 1) < 1e-9 ? '' : formatNumber(Math.abs(a));
+    parts.push({ sign: a < 0 ? '-' : '+', text: `${coef}${varName}²` });
+  }
+  if(Math.abs(b) > 1e-9) {
+    const coef = Math.abs(Math.abs(b) - 1) < 1e-9 ? '' : formatNumber(Math.abs(b));
+    parts.push({ sign: b < 0 ? '-' : '+', text: `${coef}${varName}` });
+  }
+  if(Math.abs(c) > 1e-9 || parts.length === 0) {
+    parts.push({ sign: c < 0 ? '-' : '+', text: formatNumber(Math.abs(c)) });
+  }
+  let out = (parts[0].sign === '-' ? '-' : '') + parts[0].text;
+  for(let i = 1; i < parts.length; i++) out += ` ${parts[i].sign} ${parts[i].text}`;
+  return out;
+}
+
+function tryArithmetic(q) {
+  const candidate = q.replace(/^(what is|calculate|evaluate|solve|find|compute)\s*[:]?\s*/, '').trim();
+  const stripped = candidate.replace(/\s+/g, '');
+  if(!stripped || !/^[0-9+\-*/^().]+$/.test(stripped)) return null;
+  if(!/\d/.test(stripped)) return null;
+  if(!/[+\-*/^]/.test(stripped.slice(1))) return null; // need an operator to be a real expression
+  try {
+    const result = evaluateArithmetic(stripped);
+    return `<strong>${candidate} = ${formatNumber(result)}</strong>`;
+  } catch(e) {
+    return null;
+  }
+}
+
+function prepEquationSide(side, varName) {
+  let s = side.trim();
+  s = s.replace(new RegExp('(\\d)(' + varName + ')', 'g'), '$1*$2');   // 2x -> 2*x
+  s = s.replace(new RegExp('(' + varName + ')(\\d)', 'g'), '$1*$2');   // x2 -> x*2
+  s = s.replace(/\)\(/g, ')*(');
+  s = s.replace(/(\d)\(/g, '$1*(');
+  s = s.replace(/\)(\d)/g, ')*$1');
+  s = s.replace(new RegExp(varName + '\\(', 'g'), varName + '*(');
+  s = s.replace(new RegExp('\\)' + varName, 'g'), ')*' + varName);
+  return s;
+}
+
+function evalSideAt(preppedSide, varName, value) {
+  const substituted = preppedSide.replace(new RegExp(varName, 'g'), `(${value})`);
+  return evaluateArithmetic(substituted);
+}
+
+// Solves single-variable equations in x or y by sampling the
+// difference g(t) = LHS(t) - RHS(t) at several points and reading
+// off its polynomial degree/coefficients from finite differences —
+// this correctly handles linear or quadratic equations of any
+// shape (including parentheses and division) without needing a
+// full symbolic algebra engine.
+function solveEquation(q) {
+  const cleanedQuery = q.replace(/^(please\s+)?(solve|find|calculate|evaluate)\s+(for\s+[xy]\s*[:,]?\s*)?(the\s+)?(equation\s*[:]?\s*)?/, '').trim();
+  const parts = cleanedQuery.split('=');
+  if(parts.length !== 2) return null;
+
+  const hasX = /x/.test(cleanedQuery), hasY = /y/.test(cleanedQuery);
+  if(hasX && hasY) return null;               // two-variable systems not supported
+  const varName = hasX ? 'x' : (hasY ? 'y' : null);
+  if(!varName) return null;
+
+  const [leftRaw, rightRaw] = parts;
+  try {
+    const left = prepEquationSide(leftRaw, varName);
+    const right = prepEquationSide(rightRaw, varName);
+    const allowed = new RegExp('^[0-9+\\-*/^().' + varName + '\\s]+$');
+    if(!allowed.test(left) || !allowed.test(right)) return null;
+
+    const g = (t) => evalSideAt(left, varName, t) - evalSideAt(right, varName, t);
+    const gm2 = g(-2), gm1 = g(-1), g0 = g(0), g1 = g(1), g2 = g(2);
+    const EPS = 1e-6;
+
+    const d1 = [gm1 - gm2, g0 - gm1, g1 - g0, g2 - g1];
+    const isLinear = Math.abs(d1[0]-d1[1]) < EPS && Math.abs(d1[1]-d1[2]) < EPS && Math.abs(d1[2]-d1[3]) < EPS;
+
+    if(isLinear) {
+      const a = d1[1], c = g0;
+      if(Math.abs(a) < EPS) {
+        if(Math.abs(c) < EPS) return `<strong>This equation is true for every value of ${varName}</strong> — both sides simplify to the same expression, so it has infinitely many solutions.`;
+        return `<strong>This equation has no solution</strong> — the ${varName} terms cancel out, leaving a false statement (like a number equalling a different number).`;
+      }
+      const x = -c / a;
+      return `<strong>Solving for ${varName}:</strong><div class="formula">${leftRaw.trim()} = ${rightRaw.trim()}</div>Bringing all ${varName} terms to one side and constants to the other gives:<br><br><strong>${varName} = ${formatNumber(x)}</strong>`;
+    }
+
+    const d2 = [d1[1]-d1[0], d1[2]-d1[1], d1[3]-d1[2]];
+    const isQuadratic = Math.abs(d2[0]-d2[1]) < EPS && Math.abs(d2[1]-d2[2]) < EPS;
+    if(isQuadratic) {
+      const c = g0;
+      const a = (g1 + gm1) / 2 - g0;
+      const b = (g1 - gm1) / 2;
+      if(Math.abs(a) < EPS) return null;
+      const D = b*b - 4*a*c;
+      let rootsText;
+      if(D > EPS) {
+        const r1 = (-b + Math.sqrt(D)) / (2*a);
+        const r2 = (-b - Math.sqrt(D)) / (2*a);
+        rootsText = `${varName} = ${formatNumber(r1)} or ${varName} = ${formatNumber(r2)}`;
+      } else if(Math.abs(D) <= EPS) {
+        rootsText = `${varName} = ${formatNumber(-b/(2*a))} (equal/repeated root)`;
+      } else {
+        const re = -b/(2*a), im = Math.sqrt(-D)/(2*a);
+        rootsText = `No real solutions (discriminant = ${formatNumber(D)} &lt; 0). Complex roots: ${varName} = ${formatNumber(re)} ± ${formatNumber(im)}i`;
+      }
+      return `<strong>This is a quadratic equation in ${varName}:</strong><div class="formula">${leftRaw.trim()} = ${rightRaw.trim()}</div>Standard form:<div class="formula">${formatQuadraticStandardForm(a,b,c,varName)} = 0</div>Using the quadratic formula ${varName} = (−b ± √(b²−4ac)) / 2a:<br><br><strong>${rootsText}</strong>`;
+    }
+
+    return null; // higher-degree or not a clean polynomial — let the KB/fallback handle it
+  } catch(e) {
+    return null;
+  }
+}
+
+// ============================================================
+// EXACT TRIG VALUE CALCULATOR
+// Direct numeric lookups like "what is tan 60", "sin 30 value",
+// "cot90" must always give the mathematically exact answer —
+// never left to fuzzy keyword matching, which can be fooled by
+// unrelated phrases that happen to share a common word.
+// ============================================================
+const TRIG_VALUES = {
+  sin:   {0:'0', 30:'1/2', 45:'1/√2 (≈ 0.707)', 60:'√3/2 (≈ 0.866)', 90:'1'},
+  cos:   {0:'1', 30:'√3/2 (≈ 0.866)', 45:'1/√2 (≈ 0.707)', 60:'1/2', 90:'0'},
+  tan:   {0:'0', 30:'1/√3 (≈ 0.577)', 45:'1', 60:'√3 (≈ 1.732)', 90:'not defined'},
+  cosec: {0:'not defined', 30:'2', 45:'√2 (≈ 1.414)', 60:'2/√3 (≈ 1.155)', 90:'1'},
+  sec:   {0:'1', 30:'2/√3 (≈ 1.155)', 45:'√2 (≈ 1.414)', 60:'2', 90:'not defined'},
+  cot:   {0:'not defined', 30:'√3 (≈ 1.732)', 45:'1', 60:'1/√3 (≈ 0.577)', 90:'0'},
+};
+
+// Checked longest/most-specific alias first, so "cosec"/"cosine" etc.
+// are never mistakenly read as "cos", and "cotangent"/"cot" never as "co".
+const TRIG_ALIASES = [
+  ['cosecant','cosec'], ['cotangent','cot'], ['cosec','cosec'], ['secant','sec'],
+  ['cosine','cos'], ['tangent','tan'], ['sine','sin'], ['csc','cosec'],
+  ['cot','cot'], ['sec','sec'], ['cos','cos'], ['tan','tan'], ['sin','sin'],
+];
+
+function computeTrigValue(q) {
+  // Skip anything that looks like a compound expression, proof, or equation —
+  // those should use the richer step-by-step worked-example entries instead.
+  if(/[+\-*/^]|²|expression|evaluate|simplify|identity|prove|equation|verify/.test(q)) return null;
+
+  let func = null;
+  for(const [alias, key] of TRIG_ALIASES) {
+    if(q.includes(alias)) { func = key; break; }
+  }
+  if(!func) return null;
+
+  // Match a standalone standard angle (0, 30, 45, 60, 90) — not a digit
+  // that's part of a longer number like the "20" in "120".
+  const angleMatch = q.match(/(?<!\d)(0|30|45|60|90)(?!\d)/);
+  if(!angleMatch) return null;
+
+  // If there are any other digits in the query besides this one angle
+  // (e.g. a coefficient like the "2" in "2tan45"), it's a compound
+  // expression — defer to the KB instead of a bare single-value answer.
+  if(/\d/.test(q.replace(angleMatch[0], ''))) return null;
+
+  const angle = angleMatch[1];
+  const val = TRIG_VALUES[func][angle];
+  return `<strong>${func} ${angle}° = ${val}</strong><br><br>Straight from the standard trigonometric values table (0°, 30°, 45°, 60°, 90° are the only angles this table covers in Class 10). Ask "standard values table" to see the full table.`;
+}
+
+function getAnswer(query) {
+  const q = query.toLowerCase().trim();
+  const chId = currentChapter ? currentChapter.id : 0;
+
+  // 0a. Single-variable equation in x or y (linear or quadratic) — solve it directly.
+  const eqAnswer = solveEquation(q);
+  if(eqAnswer) return eqAnswer;
+
+  // 0b. Plain arithmetic expression — compute it directly.
+  const arithAnswer = tryArithmetic(q);
+  if(arithAnswer) return arithAnswer;
+
+  // 0c. Exact numeric trig-value lookup always wins next — no ambiguity possible.
+  const trigValue = computeTrigValue(q);
+  if(trigValue) return trigValue;
+
+  // Score every entry and pick the BEST match, not just the first one that
+  // happens to contain a short/generic keyword. This stops a generic phrase
+  // like "trig ratios" from stealing queries meant for a more specific entry
+  // like "trig ratios of 0 and 90".
+  function bestMatch(items) {
+    let best = null, bestScore = 0;
+    for(const item of items) {
+      for(const keyword of item.q) {
+        let score = 0;
+        if(q === keyword) {
+          score = 1000 + keyword.length;                 // exact match wins outright
+        } else if(q.includes(keyword)) {
+          score = 200 + keyword.length;                   // query contains the whole keyword phrase — longer/more specific keyword scores higher
+        } else if(keyword.length > 4 && keyword.includes(q)) {
+          score = 150 + q.length;                          // keyword contains the (shorter) query
+        } else {
+          const sim = similarity(q, keyword);
+          if(sim > 0.6) score = 60 + sim * 10;
+        }
+        if(score > bestScore) { bestScore = score; best = item; }
+      }
+    }
+    return { item: best, score: bestScore };
+  }
+
+  // 1. Prefer a strong match within the current chapter
+  const chapterItems = KB.filter(k=>k.ch===chId);
+  const chapterMatch = bestMatch(chapterItems);
+  if(chapterMatch.item && chapterMatch.score >= 60) return chapterMatch.item.a;
+
+  // 2. Otherwise search across every chapter
+  const allMatch = bestMatch(KB);
+  if(allMatch.item && allMatch.score >= 60) return allMatch.item.a;
+
+  // 3. Loose word-level matching (last resort). Filler words like "what",
+  // "does", "find", "define" are excluded — matching on those alone caused
+  // wrong answers before (a keyword merely containing the word "what" would
+  // win regardless of what was actually asked).
+  const STOPWORDS = new Set(['what','which','when','where','why','how','does','do','did','is','are','was','were','the','a','an','of','on','at','to','for','and','or','me','you','your','my','please','about','can','could','would','should','with','this','that','these','those','it','its','if','so','just','also','only','need','want','know','let']);
+  const words = q.split(' ').filter(w=>w.length>3 && !STOPWORDS.has(w));
+  const order = chapterItems.concat(KB.filter(k=>k.ch!==chId));
+  for(const item of order) {
+    for(const keyword of item.q) {
+      for(const word of words) {
+        if(keyword.includes(word) && word.length > 3) {
+          return item.a;
+        }
+      }
+    }
+  }
+
+  // Fallback
+  return getFallback(q, chId);
+}
+
+function similarity(a, b) {
+  const setA = new Set(a.split(' '));
+  const setB = new Set(b.split(' '));
+  const intersection = new Set([...setA].filter(x => setB.has(x)));
+  const union = new Set([...setA, ...setB]);
+  return intersection.size / union.size;
+}
+
+function getFallback(q, chId) {
+  const chName = currentChapter ? currentChapter.name : 'Mathematics';
+  const suggestions = {
+    1: "Try asking: Euclid's Division Lemma, HCF using Euclid, Fundamental Theorem, Irrational Numbers, Decimal Expansion",
+    2: "Try asking: Zeros of Polynomial, Quadratic Zeros, Division Algorithm",
+    3: "Try asking: Substitution Method, Elimination Method, Types of Solutions",
+    4: "Try asking: Quadratic Formula, Factorisation Method, Completing the Square, Discriminant",
+    5: "Try asking: nth Term of AP, Sum of AP, Common Difference",
+    6: "Try asking: BPT Theorem, Similarity Criteria, Pythagoras Theorem",
+    7: "Try asking: Distance Formula, Section Formula, Midpoint Formula, Area of Triangle",
+    8: "Try asking: Trig Ratios, Standard Values Table, Trig Identities, Complementary Angles, Find Other Ratios if Sin A is Given, Ratios of 0° and 90°, Evaluate an Expression, Prove an Identity, Right Triangle Example",
+    9: "Try asking: Angle of Elevation, Heights and Distances",
+    10: "Try asking: Tangent Properties, Number of Tangents",
+    11: "Try asking: Area of Sector, Area of Segment",
+    12: "Try asking: Surface Area and Volume Formulas, Frustum of Cone",
+    13: "Try asking: Mean Formula, Median Formula, Mode Formula",
+    14: "Try asking: Probability Formula, Cards Probability, Dice Probability",
+  };
+  const hint = suggestions[chId] || "Try asking about any concept from the chapter";
+  return `I'm covering <strong>Class 10 NCERT ${chName}</strong> — I didn't quite catch that question.<br><br>📌 ${hint}<br><br>Or try rephrasing your question — I'm here to help! 🎒`;
+}
+
+// ============================================================
+// CALCULATOR MODAL — a real on-screen calculator that solves any
+// arithmetic and single-variable equation, wired to the same
+// evaluateArithmetic()/solveEquation() engine used in chat.
+// ============================================================
+const calcState = { expr: '' };
+
+const CALC_KEYS = [
+  { label: 'C',  cls: 'calc-func' }, { label: '(',  cls: 'calc-func' }, { label: ')',  cls: 'calc-func' }, { label: '⌫',  cls: 'calc-func' },
+  { label: '7' }, { label: '8' }, { label: '9' }, { label: '/', cls: 'calc-op' },
+  { label: '4' }, { label: '5' }, { label: '6' }, { label: '*', cls: 'calc-op' },
+  { label: '1' }, { label: '2' }, { label: '3' }, { label: '-', cls: 'calc-op' },
+  { label: '0' }, { label: '.' }, { label: '00' }, { label: '+', cls: 'calc-op' },
+  { label: 'x', cls: 'calc-var' }, { label: 'y', cls: 'calc-var' }, { label: '^', cls: 'calc-op' }, { label: '=', cls: 'calc-op' },
+];
+
+function renderCalcGrid() {
+  const grid = document.getElementById('calcGrid');
+  if(!grid || grid.children.length) return; // build once
+  grid.innerHTML = CALC_KEYS.map(k =>
+    `<button class="calc-key ${k.cls||''}" onclick="calcPress(${JSON.stringify(k.label)})">${k.label}</button>`
+  ).join('');
+}
+
+function openCalculator() {
+  renderCalcGrid();
+  calcState.expr = '';
+  renderCalcDisplay();
+  document.getElementById('calcOverlay').classList.add('show');
+}
+
+function closeCalculator() {
+  document.getElementById('calcOverlay').classList.remove('show');
+}
+
+function renderCalcDisplay() {
+  document.getElementById('calcExprDisplay').textContent = calcState.expr || '0';
+  const resultEl = document.getElementById('calcResultDisplay');
+  resultEl.textContent = '';
+  resultEl.classList.remove('calc-error');
+}
+
+function calcPress(key) {
+  if(key === 'C') { calcState.expr = ''; renderCalcDisplay(); return; }
+  if(key === '⌫') { calcState.expr = calcState.expr.slice(0, -1); renderCalcDisplay(); return; }
+  calcState.expr += key;              // '=' is just another character here — it builds
+  renderCalcDisplay();                // an equation like "2x+5=15"; it does NOT evaluate
+}
+
+function calcEquals() {
+  const expr = calcState.expr.trim();
+  const resultEl = document.getElementById('calcResultDisplay');
+  if(!expr) return;
+
+  let html = null;
+  try {
+    if(/^-?\d+(\.\d+)?$/.test(expr)) {
+      html = `<strong>${expr}</strong>`;                 // a bare number — nothing to compute, just show it
+    } else if(expr.includes('=')) {
+      html = solveEquation(expr.toLowerCase());
+    } else {
+      html = tryArithmetic(expr.toLowerCase());
+    }
+  } catch(e) {
+    html = null;
+  }
+
+  if(html) {
+    resultEl.textContent = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    resultEl.classList.remove('calc-error');
+  } else {
+    resultEl.textContent = "Couldn't solve that — check the expression and try again.";
+    resultEl.classList.add('calc-error');
+  }
+}
+
+// Physical keyboard support while the calculator is open
+document.addEventListener('keydown', (e) => {
+  const overlay = document.getElementById('calcOverlay');
+  if(!overlay || !overlay.classList.contains('show')) return;
+  if(/^[0-9+\-*/^().xy=]$/i.test(e.key)) { e.preventDefault(); calcPress(e.key.toLowerCase()); return; }
+  if(e.key === 'Enter') { e.preventDefault(); calcEquals(); return; }
+  if(e.key === 'Backspace') { e.preventDefault(); calcPress('⌫'); return; }
+  if(e.key === 'Escape') { e.preventDefault(); closeCalculator(); return; }
+});
+
+// Load chapters on start
+renderChapters();
+</script>
+</body>
+</html>
